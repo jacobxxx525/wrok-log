@@ -2,145 +2,501 @@
 <html lang="zh">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>每日工作记录</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>工作记录</title>
 <style>
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 20px 16px 60px;
-    background: #fafafa;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+    background: #f7f8fa;
     color: #1d1d1f;
+    padding-bottom: 80px;
+    min-height: 100vh;
   }
-  h1 { font-size: 22px; margin: 0 0 2px; font-weight: 600; }
-  .date { color: #999; font-size: 13px; margin-bottom: 20px; }
 
-  .progress-wrap { margin-bottom: 24px; }
+  .page { max-width: 680px; margin: 0 auto; padding: 24px 16px; display: none; }
+  .page.active { display: block; }
+
+  h1 { font-size: 26px; margin: 0 0 4px; font-weight: 700; letter-spacing: -0.5px; }
+  .subtitle { color: #8e8e93; font-size: 14px; margin-bottom: 24px; }
+
+  /* 进度卡片 */
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .progress-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+  }
+  .progress-head .label { font-size: 15px; color: #666; font-weight: 500; }
+  .progress-head .num { font-size: 28px; font-weight: 700; color: #1d1d1f; }
+  .progress-head .num .total { font-size: 18px; color: #8e8e93; font-weight: 500; }
   .progress-bar {
-    height: 8px;
-    background: #ececec;
-    border-radius: 4px;
+    height: 10px;
+    background: #f0f0f2;
+    border-radius: 5px;
     overflow: hidden;
   }
   .progress-fill {
     height: 100%;
-    background: #34c759;
-    border-radius: 4px;
-    transition: width 0.3s;
+    background: linear-gradient(90deg, #4cd964, #34c759);
+    border-radius: 5px;
+    transition: width 0.4s ease;
     width: 0;
   }
-  .progress-text {
-    font-size: 13px;
-    color: #666;
-    margin-top: 8px;
+  .progress-foot {
     display: flex;
     justify-content: space-between;
+    font-size: 13px;
+    color: #8e8e93;
+    margin-top: 10px;
   }
-  .progress-text strong { color: #1d1d1f; font-weight: 600; }
 
-  .input-row { display: flex; gap: 8px; margin-bottom: 28px; }
+  /* 输入区 */
+  .input-card { padding: 14px; }
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
   input[type=text] {
     flex: 1;
-    padding: 13px 14px;
-    border: 1px solid #e0e0e0;
+    padding: 12px 14px;
+    border: 1.5px solid #e5e5ea;
     border-radius: 12px;
     font-size: 15px;
     outline: none;
-    background: #fff;
+    background: #fafafa;
+    transition: border-color 0.2s, background 0.2s;
+    min-width: 0;
   }
-  input[type=text]:focus { border-color: #007aff; }
+  input[type=text]:focus { border-color: #007aff; background: #fff; }
+  input[type=date] {
+    padding: 12px 10px;
+    border: 1.5px solid #e5e5ea;
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+    background: #fafafa;
+    color: #1d1d1f;
+    min-width: 0;
+  }
   button.add-btn {
-    padding: 13px 20px;
+    padding: 12px 18px;
     border: none;
     border-radius: 12px;
     background: #007aff;
     color: #fff;
     font-size: 15px;
+    font-weight: 600;
     cursor: pointer;
-    font-weight: 500;
+    white-space: nowrap;
   }
   button.add-btn:active { opacity: 0.7; }
 
+  /* 分区标题 */
   .section-title {
     font-size: 13px;
-    color: #999;
+    color: #8e8e93;
     font-weight: 600;
-    margin: 0 0 10px 4px;
-    letter-spacing: 0.3px;
+    margin: 20px 0 10px 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  .section-title.overdue { color: #ff3b30; }
+  .section-title .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #c7c7cc;
+  }
+  .section-title.orange .dot { background: #ff9500;3 }
+  .section-title.red .dotb { background: #ff30; }
 
-  ul { list-style: none; padding: 0; margin: 0 0 24px; }
-  li {
+  /* 任务卡片 */
+  ul { list-style: none; padding: 0; margin: 0; }
+  li.task {
     background: #fff;
     padding: 14px 16px;
     margin-bottom: 8px;
-    border-radius: 12px;
+    border-radius: 14px;
     display: flex;
-    align-items: center;
-    gap: 12px;
-    border: 1px solid #f0f0f0;
+    align-items: flex.d-startone;
+    gap: 12 .px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    transition: opacity 0.2s;
+    border-left: 3px solid transparent;
   }
-  li.carried { background: #fff8f0; border-color: #ffe0c0; }
-  li.overdue { background: #fff5f5; border-color: #ffd5d5; }
-  li.done { opacity: 0.55; }
-  li.done .title { text-decoration: line-through; color: #999; }
+  li.task.carried { border-left-color: #ff9500; background: #fffbf5; }
+  li.task.overdue { border-left-color: #ff3b30; background: #fff5f5; }
+  li.task.done { opacity: 0.5; }
+  li.tasktitle { text-decoration: line-through; color: #8e8e93; }
 
-  .checkbox-wrap { display: flex; align-items: center; }
-  input[type=checkbox] {
-    width: 20px; height: 20px; cursor: pointer;
-    accent-color: #34c759;
+  .checkbox {
+    width: 22px; height: 22px;
+    border: 2px solid #d1d1d6;
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    margin-top: 1px;
+    transition: all 0.2s;
   }
+  .checkbox:hover { border-color: #34c759; }
+  .checkbox.checked {
+    background: #34c759;
+    border-color: #34c759;
+  }
+  .checkbox.checked::after {
+    content: '';
+    position: absolute;
+    left: 6px; top: 2px;
+    width: 5px; height: 10px;
+    border: solid #fff;
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg);
+  }
+
   .content { flex: 1; min-width: 0; }
-  .title { word-break: break-word; font-size: 15px; line-height: 1.4; }
+  .title { word-break: break-word; font-size: 15px; line-height: 1.45; font-weight: 500; }
   .meta {
     font-size: 12px;
-    color: #999;
+    color: #8e8e93;
     margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
   }
-  .meta.overdue-text { color: #ff3b30; font-weight: 500; }
+  .meta .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .tag.origin { background: #fff3e0; color: #e07800; }
+  .tag.overdue { background: #ffebeb; color: #ff3b30; }
 
   .del {
     background: none;
     border: none;
-    color: #c0c0c0;
-    font-size: 22px;
+    color: #c7c7cc;
+    font-size: 24px;
     padding: 0 4px;
     cursor: pointer;
     line-height: 1;
+    flex-shrink: 0;
+    align-self: center;
   }
   .del:active { color: #ff3b30; }
 
   .empty {
-    color: #bbb;
     text-align: center;
-    padding: 40px 0;
+    color: #c7c7cc;
+    padding: 50px 20px;
     font-size: 14px;
   }
+  .empty-icon { font-size: 42px; margin-bottom: 12px; opacity: 0.4; }
 
-  .loading { text-align: center; color: #bbb; padding: 40px 0; }
+  /* 日历 */
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .cal-title { font-size: 22px; font-weight: 700; }
+  .cal-nav {
+    display: flex;
+    gap: 8px;
+  }
+  .cal-nav button {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    color: #1d1d1f;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .cal-nav button:active { background: #f0f0f2; }
+
+  .cal-grid {
+    background: #fff;
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 6px;
+  }
+  .cal-weekdays div {
+    text-align: center;
+    font-size: 12px;
+    color: #8e8e93;
+    font-weight: 600;
+    padding: 6px 0;
+  }
+  .cal-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .cal-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    color: #1d1d1f;
+    transition: background 0.15s;
+    position: relative;
+    padding: 2px;
+  }
+  .cal-cell.other-month { color: #d1d1d6; }
+  .cal-cell.today { background: #e6f0ff; font-weight: 700; color: #007aff; }
+  .cal-cell:hover:not(.empty-cell) { background: #f0f0f2; }
+  .cal-cell.selected { background: #007aff; color: #fff; }
+  .cal-cell.selected .cal-num { color: #fff; }
+  .cal-cell.selected .cal-stat { color: rgba(255,255,255,0.9); }
+  .cal-num { line-height: 1; font-weight: 500; }
+  .cal-stat {
+    font-size: 9px;
+    margin-top: 3px;
+    color: #8e8e93;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .cal-stat .ok { color: #34c759; }
+  .cal-stat .no { color: #ff3b30; }
+  .cal-cell.selected .cal-stat .ok,
+  .cal-cell.selected .cal-stat .no { color: rgba(255,255,255,0.95); }
+  .cal-cell.empty-cell { cursor: default; }
+
+  /* 详情页 */
+  .detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .back-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #007aff;
+  }
+  .back-btn:active { background: #f0f0f2; }
+  .detail-title { font-size: 20px; font-weight: 700; }
+
+  /* 统计 */
+  .stat-big {
+    text-align: center;
+    padding: 28px 20px;
+  }
+  .stat-big .big-num {
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1;
+    color: #007aff;
+    letter-spacing: -2px;
+  }
+  .stat-big .big-label {
+    font-size: 14px;
+    color: #8e8e93;
+    margin-top: 8px;
+  }
+  .stat-row {
+    display: flex;
+    gap: 12px;
+  }
+  .stat-box {
+    flex: 1;
+    background: #fff;
+    border-radius: 16px;
+    padding: 18px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .stat-box .num { font-size: 28px; font-weight: 700; }
+  .stat-box .num.green { color: #34c759; }
+  .stat-box .num.red { color: #ff3b30; }
+  .stat-box .lbl { font-size: 12px; color: #8e8e93; margin-top: 4px; }
+
+  .chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 140px;
+    gap: 8px;
+    padding: 0 4px;
+    margin-top: 8px;
+  }
+  .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .bar {
+    width: 100%;
+    background: linear-gradient(180deg, #4cd964, #34c759);
+    border-radius: 6px 6px 2px 2px;
+    min-height: 4px;
+    transition: height 0.4s;
+  }
+  .bar-label { font-size: 11px; color: #8e8e93; }
+  .bar-num { font-size: 11px; font-weight: 600; color: #1d1d1f; }
+
+  /* 底部 Tab */
+  .tabs {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid #e5e5ea;
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 100;
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 0 12px;
+    text-align: center;
+    cursor: pointer;
+    color: #8e8e93;
+    font-size: 11px;
+    font-weight: 500;
+    transition: color 0.15s;
+    border: none;
+    background: none;
+  }
+  .tab.active { color: #007aff; }
+  .tab .icon { font-size: 22px; display: block; margin-bottom: 2px; }
+
+  .loading { text-align: center; color: #c7c7cc; padding: 50px 0; }
 </style>
 </head>
 <body>
-  <h1>今天</h1>
-  <div class="date" id="dateLabel"></div>
+ <!-- 今天页 -->
+  <div class="page active" id="page-today">
+    <h1>今天</h1>
+    <div class="subtitle" id="todayLabel"></div>
 
-  <div class="progress-wrap">
-    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-    <div class="progress-text">
-      <span>完成 <strong id="doneCount">0</strong> / <strong id="totalCount">0</strong></span>
-      <span id="percentText">0%</span>
+    <div class="card">
+      <div class="progress-head">
+        <span class="label">今日进度</span>
+        <span class="num"><span id="doneNum">0</span><span class="total"> / <span id="totalNum">0</span></span></span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-foot">
+        <span id="footLeft">还没有任务</span>
+        <span id="footRight"></span>
+      </div>
+    </div>
+
+    <div class="card input-card">
+      <div class="input-row">
+        <input type="text" id="taskInput" placeholder="记一件事...">
+        <input type="date" id="dateInput">
+      </div>
+      <div class="input-row" style="margin-top:8px">
+        <button class="add-btn" style="width:100%" onclick="addTask()">添加任务</button>
+      </div>
+    </div>
+
+    <div id="todayContent"><div class="loading">加载中...</div></div>
+  </div>
+
+  <!-- 日历页 -->
+  <div class="page" id="page-calendar">
+    <h1>日历</h1>
+    <div class="subtitle">看看每天做了什么</div>
+
+    <div class="cal-header">
+      <div class="cal-title" id="calTitle"></div>
+      <div class="cal-nav">
+        <button onclick="calMove(-1)">‹</button>
+        <button onclick="calMove(1)">›</button>
+      </div>
+    </div>
+
+    <div class="cal-grid">
+      <div class="cal-weekdays">
+        <div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div>
+      </div>
+      <div class="cal-days" id="calDays"></div>
     </div>
   </div>
 
-  <div class="input-row">
-    <input type="text" id="taskInput" placeholder="输入任务，回车添加">
-    <button class="add-btn" onclick="addTask()">添加</button>
+  <!-- 某天详情页 -->
+  <div class="page" id="page-detail">
+    <div class="detail-header">
+      <button class="back-btn" onclick="showPage('calendar')">‹</button>
+      <div class="detail-title" id="detailTitle"></div>
+    </div>
+    <div id="detailContent"></div>
   </div>
 
-  <div id="content"><div class="loading">加载中...</div></div>
+  <!-- 统计页 -->
+  <div class="page" id="page-stats">
+    <h1>统计</h1>
+    <div class="subtitle">本周概览</div>
+
+    <div class="card stat-big">
+      <div class="big-num" id="weekDoneNum">0</div>
+      <div class="big-label">本周完成任务</div>
+    </div>
+
+    <div class="stat-row" style="margin-bottom:16px">
+      <div class="stat-box">
+        <div class="num green" id="weekDone">0</div>
+        <div class="lbl">已完成</div>
+      </div>
+      <div class="stat-box">
+        <div class="num red" id="weekUndone">0</div>
+        <div class="lbl">未完成</div>
+      </div>
+      <div class="stat-box">
+        <div class="num" id="weekRate">0%</div>
+        <div class="lbl">完成率</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" style="margin-top:0">最近 7 天完成趋势</div>
+      <div class="chart" id="weekChart"></div>
+    </div>
+  </div>
+
+  <!-- 底部 Tab -->
+  <div class="tabs">
+    <button class="tab active" data-page="today" onclick="showPage('today')">
+      <span class="icon">☀️</span>今天
+    </button>
+    <button class="tab" data-page="calendar" onclick="showPage('calendar')">
+      <span class="icon">📅</span>日历
+    </button>
+    <button class="tab" data-page="stats" onclick="showPage('stats')">
+      <span class="icon">📊</span>统计
+    </button>
+  </div>
 
 <script>
 const SUPABASE_URL = 'https://qsthbkcaoxcuteukofkh.supabase.co';
@@ -153,172 +509,167 @@ const HEADERS = {
   'Content-Type': 'application/json'
 };
 
-function todayStr() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return y + '-' + m + '-' + day;
+// ========== 工具函数 ==========
+function pad(n) { return String(n).padStart(2, '0'); }
+function ymd(d) {
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 }
-
-const today = todayStr();
-document.getElementById('dateLabel').textContent = formatDate(today);
-
-function formatDate(str) {
-  const parts = str.split('-');
-  return parts[0] + '年' + parseInt(parts[1]) + '月' + parseInt(parts[2]) + '日';
+function todayStr() { return ymd(new Date()); }
+function parseYmd(s) {
+  const p = s.split('-');
+  return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
 }
-
-function shortDate(str) {
-  const parts = str.split('-');
-  return parseInt(parts[1]) + '-' + String(parts[2]).padStart(2, '0');
+function formatDateCN(s) {
+  const p = s.split('-');
+  return parseInt(p[0]) + '年' + parseInt(p[1]) + '月' + parseInt(p[2]) + '日';
 }
-
+function shortDate(s) {
+  const p = s.split('-');
+  return parseInt(p[1]) + '月' + parseInt(p[2]) + '日';
+}
+function weekdayCN(s) {
+  const w = ['日','一','二','三','四','五','六'];
+  return '周' + w[parseYmd(s).getDay()];
+}
 function daysBetween(a, b) {
-  const da = new Date(a + 'T00:00:00');
-  const db = new Date(b + 'T00:00:00');
+  const da = parseYmd(a), db = parseYmd(b);
   return Math.round((db - da) / 86400000);
 }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+}
 
-async function carryOver() {
+const TODAY = todayStr();
+
+// ========== 页面切换 ==========
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.page === name);
+  });
+  window.scrollTo(0, 0);
+  if (name === 'today') loadToday();
+  if (name === 'calendar') loadCalendar();
+  if (name === 'stats') loadStats();
+}
+
+// ========== 今天页 ==========
+async function loadToday() {
+  const d = new Date();
+  document.getElementById('todayLabel').textContent =
+    formatDateCN(TODAY) + ' · ' + weekdayCN(TODAY);
+
+  const dateInput = document.getElementById('dateInput');
+  if (!dateInput.value) dateInput.value = TODAY;
+
   const res = await fetch(
-    `${API}?date=lt.${today}&done=eq.false`,
+    `${API}?or=(date.eq.${TODAY},and(date.lt.${TODAY},done.eq.false))&order=date,created_at`,
     { headers: HEADERS }
   );
   const tasks = await res.json();
-  if (tasks.length === 0) return;
-
-  for (const t of tasks) {
-    await fetch(`${API}?id=eq.${t.id}`, {
-      method: 'PATCH',
-      headers: HEADERS,
-      body: JSON.stringify({
-        date: today,
-        from_yesterday: true
-      })
-    });
-  }
+  renderToday(tasks);
 }
 
-async function load() {
-  const res = await fetch(
-    `${API}?date=eq.${today}&order=done,created_at`,
-    { headers: HEADERS }
-  );
-  const tasks = await res.json();
-  render(tasks);
-}
-
-function render(tasks) {
-  const content = document.getElementById('content');
-  content.innerHTML = '';
-
-  const carried = tasks.filter(t => t.from_yesterday && !t.done);
-  const normal = tasks.filter(t => !t.from_yesterday);
-  const carriedDone = tasks.filter(t => t.from_yesterday && t.done);
+function renderToday(tasks) {
+  const el = document.getElementById('todayContent');
+  el.innerHTML = '';
 
   const total = tasks.length;
   const done = tasks.filter(t => t.done).length;
-  document.getElementById('doneCount').textContent = done;
-  document.getElementById('totalCount').textContent = total;
+  const undone = total - done;
   const percent = total === 0 ? 0 : Math.round(done / total * 100);
+
+  document.getElementById('doneNum').textContent = done;
+  document.getElementById('totalNum').textContent = total;
   document.getElementById('progressFill').style.width = percent + '%';
-  document.getElementById('percentText').textContent = percent + '%';
+  document.getElementById('footLeft').textContent = total === 0 ? '还没有任务' : (done + ' 项已完成');
+  document.getElementById('footRight').textContent = total === 0 ? '' : (undone + ' 项待办 · ' + percent + '%');
 
   if (total === 0) {
-    content.innerHTML = '<div class="empty">今天还没有任务</div>';
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🌿</div>今天还没有任务<br>在上面添加一条吧</div>';
     return;
   }
 
+  const carried = tasks.filter(t => t.date < TODAY && !t.done);
+  const todayNew = tasks.filter(t => t.date === TODAY);
+
   if (carried.length > 0) {
-    const overdueCount = carried.filter(t => daysBetween(t.origin_date, today) > 3).length;
-    const title = document.createElement('div');
-    title.className = 'section-title';
-    title.textContent = '顺延来的（' + carried.length + '）';
-    content.appendChild(title);
-
+    el.appendChild(sectionTitle('顺延来的 · ' + carried.length, 'orange'));
     const ul = document.createElement('ul');
-    carried.forEach(t => ul.appendChild(makeItem(t)));
-    content.appendChild(ul);
+    carried.forEach(t => ul.appendChild(makeTask(t, true)));
+    el.appendChild(ul);
   }
 
-  if (normal.length > 0) {
-    const title = document.createElement('div');
-    title.className = 'section-title';
-    title.textContent = '今天（' + normal.length + '）';
-    content.appendChild(title);
-
+  if (todayNew.length > 0) {
+    el.appendChild(sectionTitle('今天 · ' + todayNew.length, ''));
     const ul = document.createElement('ul');
-    normal.forEach(t => ul.appendChild(makeItem(t)));
-    content.appendChild(ul);
-  }
-
-  if (carriedDone.length > 0) {
-    const title = document.createElement('div');
-    title.className = 'section-title';
-    title.textContent = '已完成的顺延任务（' + carriedDone.length + '）';
-    content.appendChild(title);
-
-    const ul = document.createElement('ul');
-    carriedDone.forEach(t => ul.appendChild(makeItem(t)));
-    content.appendChild(ul);
+    todayNew.forEach(t => ul.appendChild(makeTask(t, false)));
+    el.appendChild(ul);
   }
 }
 
-function makeItem(t) {
-  const li = document.createElement('li');
-  const overdue = t.from_yesterday && !t.done && daysBetween(t.origin_date, today) > 3;
-  if (t.done) li.classList.add('done');
-  else if (overdue) li.classList.add('overdue');
-  else if (t.from_yesterday) li.classList.add('carried');
+function sectionTitle(text, cls) {
+  const div = document.createElement('div');
+  div.className = 'section-title ' + (cls || '');
+  div.innerHTML = '<span class="dot"></span>' + text;
+  return div;
+}
 
-  let metaHtml = '';
-  if (t.from_yesterday) {
-    const days = daysBetween(t.origin_date, today);
+function makeTask(t, isCarried) {
+  const li = document.createElement('li');
+  li.className = 'task';
+  if (t.done) li.classList.add('done');
+
+  const overdue = isCarried && daysBetween(t.date, TODAY) > 3;
+  if (overdue) li.classList.add('overdue');
+  else if (isCarried) li.classList.add('carried');
+
+  let meta = '';
+  if (isCarried) {
+    const days = daysBetween(t.date, TODAY);
     if (overdue) {
-      metaHtml = `<div class="meta overdue-text">原本 ${shortDate(t.origin_date)} · 已拖 ${days} 天</div>`;
+      meta = `<div class="meta"><span class="tag overdue">已拖 ${days} 天</span><span>原本 ${shortDate(t.date)}</span></div>`;
     } else {
-      metaHtml = `<div class="meta">原本 ${shortDate(t.origin_date)}</div>`;
+      meta = `<div class="meta"><span class="tag origin">顺延</span><span>原本 ${shortDate(t.date)}</span></div>`;
     }
+  } else if (t.done_at) {
+    const d = new Date(t.done_at);
+    meta = `<div class="meta">完成于 ${pad(d.getHours())}:${pad(d.getMinutes())}</div>`;
   }
 
   li.innerHTML = `
-    <div class="checkbox-wrap">
-      <input type="checkbox" ${t.done ? 'checked' : ''}
-             onchange="toggle(${t.id}, ${t.done})">
-    </div>
+    <div class="checkbox ${t.done ? 'checked' : ''}" onclick="toggle(${t.id}, ${t.done})"></div>
     <div class="content">
       <div class="title">${escapeHtml(t.title)}</div>
-      ${metaHtml}
+      ${meta}
     </div>
-    <button class="del" onclick="del(${t.id})">×</button>`;
+    <button class="del" onclick="delTask(${t.id})">×</button>`;
   return li;
-}
-
-function escapeHtml(s) {
-  return s.replace(/[&<>"]/g, c =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
 async function addTask() {
   const input = document.getElementById('taskInput');
+  const dateInput = document.getElementById('dateInput');
   const title = input.value.trim();
   if (!title) return;
+
+  const date = dateInput.value || TODAY;
 
   await fetch(API, {
     method: 'POST',
     headers: HEADERS,
     body: JSON.stringify({
       title: title,
-      date: today,
-      done: false,
-      from_yesterday: false,
-      origin_date: today
+      date: date,
+      done: false
     })
   });
 
   input.value = '';
-  load();
+  dateInput.value = TODAY;
+  loadToday();
 }
 
 async function toggle(id, done) {
@@ -330,25 +681,230 @@ async function toggle(id, done) {
       done_at: !done ? new Date().toISOString() : null
     })
   });
-  load();
+  loadToday();
 }
 
-async function del(id) {
-  await fetch(`${API}?id=eq.${id}`, {
-    method: 'DELETE',
-    headers: HEADERS
+async function delTask(id) {
+  if (!confirm('删除这条任务？')) return;
+  await fetch(`${API}?id=eq.${id}`, { method: 'DELETE', headers: HEADERS });
+  if (document.getElementById('page-detail').classList.contains('active')) {
+    loadDetail(currentDetailDate);
+  } else {
+    loadToday();
+  }
+}
+
+// ========== 日历页 ==========
+let calYear, calMonth;
+
+function loadCalendar() {
+  const now = new Date();
+  if (calYear === undefined) {
+    calYear = now.getFullYear();
+    calMonth = now.getMonth();
+  }
+  renderCalendar();
+}
+
+function calMove(delta) {
+  calMonth += delta;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+
+async function renderCalendar() {
+  document.getElementById('calTitle').textContent = calYear + '年' + (calMonth + 1) + '月';
+
+  const first = new Date(calYear, calMonth, 1);
+  const last = new Date(calYear, calMonth + 1, 0);
+  const startWeekday = (first.getDay() + 6) % 7; // 周一为 0
+  const daysInMonth = last.getDate();
+
+  const gridStart = new Date(calYear, calMonth, 1 - startWeekday);
+  const gridEnd = new Date(calYear, calMonth, 1 - startWeekday + 41);
+
+  const from = ymd(gridStart);
+  const to = ymd(gridEnd);
+
+  const res = await fetch(
+    `${API}?date=gte.${from}&date=lte.${to}&order=date`,
+    { headers: HEADERS }
+  );
+  const tasks = await res.json();
+
+  const byDate = {};
+  tasks.forEach(t => {
+    if (!byDate[t.date]) byDate[t.date] = { done: 0, undone: 0 };
+    if (t.done) byDate[t.date].done++;
+    else byDate[t.date].undone++;
   });
-  load();
+
+  const daysEl = document.getElementById('calDays');
+  daysEl.innerHTML = '';
+
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(calYear, calMonth, 1 - startWeekday + i);
+    const ds = ymd(d);
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell';
+
+    if (d.getMonth() !== calMonth) cell.classList.add('other-month');
+    if (ds === TODAY) cell.classList.add('today');
+
+    const info = byDate[ds];
+    let statHtml = '';
+    if (info) {
+      const parts = [];
+      if (info.done > 0) parts.push(`<span class="ok">✓${info.done}</span>`);
+      if (info.undone > 0) parts.push(`<span class="no">✗${info.undone}</span>`);
+      statHtml = `<div class="cal-stat">${parts.join(' ')}</div>`;
+    }
+
+    cell.innerHTML = `<div class="cal-num">${d.getDate()}</div>${statHtml}`;
+    cell.onclick = () => openDetail(ds);
+    daysEl.appendChild(cell);
+  }
 }
 
+// ========== 详情页 ==========
+let currentDetailDate = '';
+
+async function openDetail(dateStr) {
+  currentDetailDate = dateStr;
+  showPage('detail');
+  document.getElementById('detailTitle').textContent =
+    shortDate(dateStr) + ' · ' + weekdayCN(dateStr);
+  await loadDetail(dateStr);
+}
+
+async function loadDetail(dateStr) {
+  const res = await fetch(
+    `${API}?date=eq.${dateStr}&order=done,created_at`,
+    { headers: HEADERS }
+  );
+  const tasks = await res.json();
+
+  const el = document.getElementById('detailContent');
+  el.innerHTML = '';
+
+  // 添加卡片
+  const addCard = document.createElement('div');
+  addCard.className = 'card input-card';
+  addCard.innerHTML = `
+    <div class="input-row">
+      <input type="text" id="detailInput" placeholder="给这天加一件事...">
+    </div>
+    <div class="input-row" style="margin-top:8px">
+      <button class="add-btn" style="width:100%" onclick="addTaskToDate('${dateStr}')">添加</button>
+    </div>`;
+  el.appendChild(addCard);
+
+  if (tasks.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.innerHTML = '<div class="empty-icon">📭</div>这天还没有任务';
+    el.appendChild(empty);
+    return;
+  }
+
+  const done = tasks.filter(t => t.done).length;
+  const undone = tasks.length - done;
+
+  const summary = document.createElement('div');
+  summary.className = 'card';
+  summary.style.textAlign = 'center';
+  summary.style.padding = '16px';
+  summary.innerHTML = `<span style="color:#34c759;font-weight:700">${done} 已完成</span>
+    <span style="color:#c7c7cc;margin:0 12px">·</span>
+    <span style="color:#ff3b30;font-weight:700">${undone} 未完成</span>`;
+  el.appendChild(summary);
+
+  const ul = document.createElement('ul');
+  tasks.forEach(t => ul.appendChild(makeTask(t, false)));
+  el.appendChild(ul);
+}
+
+async function addTaskToDate(dateStr) {
+  const input = document.getElementById('detailInput');
+  const title = input.value.trim();
+  if (!title) return;
+
+  await fetch(API, {
+    method: 'POST',
+    headers: HEADERS,
+    body: JSON.stringify({ title: title, date: dateStr, done: false })
+  });
+
+  input.value = '';
+  await loadDetail(dateStr);
+  // 同步刷新日历统计
+  setTimeout(renderCalendar, 300);
+}
+
+// ========== 统计页 ==========
+async function loadStats() {
+  const now = new Date();
+  const dayOfWeek = (now.getDay() + 6) % 7; // 周一=0
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - dayOfWeek);
+  const from = ymd(monday);
+  const to = TODAY;
+
+  const res = await fetch(
+    `${API}?date=gte.${from}&date=lte.${to}`,
+    { headers: HEADERS }
+  );
+  const tasks = await res.json();
+
+  const weekDone = tasks.filter(t => t.done).length;
+  const weekUndone = tasks.filter(t => !t.done).length;
+  const weekTotal = tasks.length;
+  const rate = weekTotal === 0 ? 0 : Math.round(weekDone / weekTotal * 100);
+
+  document.getElementById('weekDoneNum').textContent = weekDone;
+  document.getElementById('weekDone').textContent = weekDone;
+  document.getElementById('weekUndone').textContent = weekUndone;
+  document.getElementById('weekRate').textContent = rate + '%';
+
+  // 最近7天趋势
+  const last7 = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    last7.push(ymd(d));
+  }
+
+  const byDate = {};
+  last7.forEach(d => byDate[d] = 0);
+  tasks.forEach(t => {
+    if (t.done && byDate[t.date] !== undefined) byDate[t.date]++;
+  });
+
+  const maxVal = Math.max(...Object.values(byDate), 1);
+
+  const chart = document.getElementById('weekChart');
+  chart.innerHTML = '';
+  last7.forEach(d => {
+    const val = byDate[d];
+    const h = Math.max((val / maxVal) * 100, 4);
+    const wd = ['日','一','二','三','四','五','六'][parseYmd(d).getDay()];
+    const wrap = document.createElement('div');
+    wrap.className = 'bar-wrap';
+    wrap.innerHTML = `
+      <div class="bar-num">${val}</div>
+      <div class="bar" style="height:${h}%"></div>
+      <div class="bar-label">${wd}</div>`;
+    chart.appendChild(wrap);
+  });
+}
+
+// ========== 初始化 ==========
 document.getElementById('taskInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') addTask();
 });
 
-(async function init() {
-  await carryOver();
-  await load();
-})();
+loadToday();
 </script>
 </body>
 </html>
