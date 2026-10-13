@@ -10,71 +10,137 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     max-width: 640px;
     margin: 0 auto;
-    padding: 20px 16px;
-    background: #f5f5f7;
+    padding: 20px 16px 60px;
+    background: #fafafa;
     color: #1d1d1f;
   }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .date { color: #86868b; font-size: 14px; margin-bottom: 20px; }
-  .input-row { display: flex; gap: 8px; margin-bottom: 20px; }
+  h1 { font-size: 22px; margin: 0 0 2px; font-weight: 600; }
+  .date { color: #999; font-size: 13px; margin-bottom: 20px; }
+
+  .progress-wrap { margin-bottom: 24px; }
+  .progress-bar {
+    height: 8px;
+    background: #ececec;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #34c759;
+    border-radius: 4px;
+    transition: width 0.3s;
+    width: 0;
+  }
+  .progress-text {
+    font-size: 13px;
+    color: #666;
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .progress-text strong { color: #1d1d1f; font-weight: 600; }
+
+  .input-row { display: flex; gap: 8px; margin-bottom: 28px; }
   input[type=text] {
     flex: 1;
-    padding: 12px 14px;
-    border: 1px solid #d2d2d7;
-    border-radius: 10px;
-    font-size: 16px;
+    padding: 13px 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 15px;
     outline: none;
+    background: #fff;
   }
   input[type=text]:focus { border-color: #007aff; }
-  button {
-    padding: 12px 18px;
+  button.add-btn {
+    padding: 13px 20px;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     background: #007aff;
     color: #fff;
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
+    font-weight: 500;
   }
-  button:active { opacity: 0.7; }
-  ul { list-style: none; padding: 0; margin: 0; }
+  button.add-btn:active { opacity: 0.7; }
+
+  .section-title {
+    font-size: 13px;
+    color: #999;
+    font-weight: 600;
+    margin: 0 0 10px 4px;
+    letter-spacing: 0.3px;
+  }
+  .section-title.overdue { color: #ff3b30; }
+
+  ul { list-style: none; padding: 0; margin: 0 0 24px; }
   li {
     background: #fff;
-    padding: 14px;
+    padding: 14px 16px;
     margin-bottom: 8px;
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     gap: 12px;
+    border: 1px solid #f0f0f0;
   }
-  li.done .title { text-decoration: line-through; color: #86868b; }
-  .title { flex: 1; word-break: break-word; }
-  input[type=checkbox] { width: 20px; height: 20px; cursor: pointer; }
+  li.carried { background: #fff8f0; border-color: #ffe0c0; }
+  li.overdue { background: #fff5f5; border-color: #ffd5d5; }
+  li.done { opacity: 0.55; }
+  li.done .title { text-decoration: line-through; color: #999; }
+
+  .checkbox-wrap { display: flex; align-items: center; }
+  input[type=checkbox] {
+    width: 20px; height: 20px; cursor: pointer;
+    accent-color: #34c759;
+  }
+  .content { flex: 1; min-width: 0; }
+  .title { word-break: break-word; font-size: 15px; line-height: 1.4; }
+  .meta {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .meta.overdue-text { color: #ff3b30; font-weight: 500; }
+
   .del {
     background: none;
-    color: #ff3b30;
-    font-size: 20px;
-    padding: 4px 10px;
+    border: none;
+    color: #c0c0c0;
+    font-size: 22px;
+    padding: 0 4px;
+    cursor: pointer;
+    line-height: 1;
   }
-  .stats {
-    margin-top: 20px;
-    color: #86868b;
-    font-size: 14px;
+  .del:active { color: #ff3b30; }
+
+  .empty {
+    color: #bbb;
     text-align: center;
+    padding: 40px 0;
+    font-size: 14px;
   }
-  .empty { color: #86868b; text-align: center; padding: 30px 0; }
+
+  .loading { text-align: center; color: #bbb; padding: 40px 0; }
 </style>
 </head>
 <body>
   <h1>今天</h1>
   <div class="date" id="dateLabel"></div>
 
-  <div class="input-row">
-    <input type="text" id="taskInput" placeholder="输入任务，回车添加">
-    <button onclick="addTask()">添加</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-text">
+      <span>完成 <strong id="doneCount">0</strong> / <strong id="totalCount">0</strong></span>
+      <span id="percentText">0%</span>
+    </div>
   </div>
 
-  <ul id="taskList"></ul>
-  <p class="stats" id="stats"></p>
+  <div class="input-row">
+    <input type="text" id="taskInput" placeholder="输入任务，回车添加">
+    <button class="add-btn" onclick="addTask()">添加</button>
+  </div>
+
+  <div id="content"><div class="loading">加载中...</div></div>
 
 <script>
 const SUPABASE_URL = 'https://qsthbkcaoxcuteukofkh.supabase.co';
@@ -87,12 +153,56 @@ const HEADERS = {
   'Content-Type': 'application/json'
 };
 
-const today = new Date().toISOString().slice(0, 10);
-document.getElementById('dateLabel').textContent = today;
+function todayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+const today = todayStr();
+document.getElementById('dateLabel').textContent = formatDate(today);
+
+function formatDate(str) {
+  const parts = str.split('-');
+  return parts[0] + '年' + parseInt(parts[1]) + '月' + parseInt(parts[2]) + '日';
+}
+
+function shortDate(str) {
+  const parts = str.split('-');
+  return parseInt(parts[1]) + '-' + String(parts[2]).padStart(2, '0');
+}
+
+function daysBetween(a, b) {
+  const da = new Date(a + 'T00:00:00');
+  const db = new Date(b + 'T00:00:00');
+  return Math.round((db - da) / 86400000);
+}
+
+async function carryOver() {
+  const res = await fetch(
+    `${API}?date=lt.${today}&done=eq.false`,
+    { headers: HEADERS }
+  );
+  const tasks = await res.json();
+  if (tasks.length === 0) return;
+
+  for (const t of tasks) {
+    await fetch(`${API}?id=eq.${t.id}`, {
+      method: 'PATCH',
+      headers: HEADERS,
+      body: JSON.stringify({
+        date: today,
+        from_yesterday: true
+      })
+    });
+  }
+}
 
 async function load() {
   const res = await fetch(
-    `${API}?date=eq.${today}&order=created_at`,
+    `${API}?date=eq.${today}&order=done,created_at`,
     { headers: HEADERS }
   );
   const tasks = await res.json();
@@ -100,29 +210,89 @@ async function load() {
 }
 
 function render(tasks) {
-  const list = document.getElementById('taskList');
-  list.innerHTML = '';
+  const content = document.getElementById('content');
+  content.innerHTML = '';
 
-  if (tasks.length === 0) {
-    list.innerHTML = '<div class="empty">今天还没有任务</div>';
-    document.getElementById('stats').textContent = '';
+  const carried = tasks.filter(t => t.from_yesterday && !t.done);
+  const normal = tasks.filter(t => !t.from_yesterday);
+  const carriedDone = tasks.filter(t => t.from_yesterday && t.done);
+
+  const total = tasks.length;
+  const done = tasks.filter(t => t.done).length;
+  document.getElementById('doneCount').textContent = done;
+  document.getElementById('totalCount').textContent = total;
+  const percent = total === 0 ? 0 : Math.round(done / total * 100);
+  document.getElementById('progressFill').style.width = percent + '%';
+  document.getElementById('percentText').textContent = percent + '%';
+
+  if (total === 0) {
+    content.innerHTML = '<div class="empty">今天还没有任务</div>';
     return;
   }
 
-  tasks.forEach(t => {
-    const li = document.createElement('li');
-    if (t.done) li.className = 'done';
-    li.innerHTML = `
+  if (carried.length > 0) {
+    const overdueCount = carried.filter(t => daysBetween(t.origin_date, today) > 3).length;
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    title.textContent = '顺延来的（' + carried.length + '）';
+    content.appendChild(title);
+
+    const ul = document.createElement('ul');
+    carried.forEach(t => ul.appendChild(makeItem(t)));
+    content.appendChild(ul);
+  }
+
+  if (normal.length > 0) {
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    title.textContent = '今天（' + normal.length + '）';
+    content.appendChild(title);
+
+    const ul = document.createElement('ul');
+    normal.forEach(t => ul.appendChild(makeItem(t)));
+    content.appendChild(ul);
+  }
+
+  if (carriedDone.length > 0) {
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    title.textContent = '已完成的顺延任务（' + carriedDone.length + '）';
+    content.appendChild(title);
+
+    const ul = document.createElement('ul');
+    carriedDone.forEach(t => ul.appendChild(makeItem(t)));
+    content.appendChild(ul);
+  }
+}
+
+function makeItem(t) {
+  const li = document.createElement('li');
+  const overdue = t.from_yesterday && !t.done && daysBetween(t.origin_date, today) > 3;
+  if (t.done) li.classList.add('done');
+  else if (overdue) li.classList.add('overdue');
+  else if (t.from_yesterday) li.classList.add('carried');
+
+  let metaHtml = '';
+  if (t.from_yesterday) {
+    const days = daysBetween(t.origin_date, today);
+    if (overdue) {
+      metaHtml = `<div class="meta overdue-text">原本 ${shortDate(t.origin_date)} · 已拖 ${days} 天</div>`;
+    } else {
+      metaHtml = `<div class="meta">原本 ${shortDate(t.origin_date)}</div>`;
+    }
+  }
+
+  li.innerHTML = `
+    <div class="checkbox-wrap">
       <input type="checkbox" ${t.done ? 'checked' : ''}
              onchange="toggle(${t.id}, ${t.done})">
-      <span class="title">${escapeHtml(t.title)}</span>
-      <button class="del" onclick="del(${t.id})">×</button>`;
-    list.appendChild(li);
-  });
-
-  const done = tasks.filter(t => t.done).length;
-  document.getElementById('stats').textContent =
-    `完成 ${done} / 共 ${tasks.length}，未完成 ${tasks.length - done}`;
+    </div>
+    <div class="content">
+      <div class="title">${escapeHtml(t.title)}</div>
+      ${metaHtml}
+    </div>
+    <button class="del" onclick="del(${t.id})">×</button>`;
+  return li;
 }
 
 function escapeHtml(s) {
@@ -142,6 +312,7 @@ async function addTask() {
       title: title,
       date: today,
       done: false,
+      from_yesterday: false,
       origin_date: today
     })
   });
@@ -174,7 +345,10 @@ document.getElementById('taskInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') addTask();
 });
 
-load();
+(async function init() {
+  await carryOver();
+  await load();
+})();
 </script>
 </body>
 </html>
